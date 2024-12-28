@@ -1,0 +1,106 @@
+---
+title: "Basic Components of bdyellowpages.net websites scrapping"
+output: html_notebook
+---
+
+```{r}
+pacman::p_load(tidyverse,rvest, curl,robotstxt, lubridate)      
+
+
+# ------  all component preparation   ------------
+business        = "https://bdyellowpages.net/category"       %>% read_html()
+professionals   = "https://bdyellowpages.net/professionals"  %>% read_html()   
+
+
+
+business_category      = business %>% html_elements("#catName a") %>% html_text() %>% 
+    data.frame(category=., type="business")
+professionals_category = professionals %>% html_elements("#catName a") %>% html_text() %>% 
+    data.frame(category=., type="professionals")
+
+
+#  1 Get Category List ________
+catagory_list = rbind(business_category, professionals_category) %>% arrange(category)
+
+# 2 Get Subcategory List with URL______
+
+business_subcat = business %>%
+     html_elements(".col-md-4 a") %>% as.character() %>% data.frame(attr=.) %>% 
+     tidyr::extract(col=attr, into = c("url_of_subcat", "subcategory"),
+                    regex = "\"(https.+?)\".+?>\\s(.+)?<",
+                    remove = TRUE)
+
+
+professionals_subcat = professionals %>%
+     html_elements(".col-md-4 a") %>% as.character() %>% data.frame(attr=.) %>% 
+     tidyr::extract(col=attr, into = c("url_of_subcat", "subcategory"),
+                    regex = "\"(https.+?)\".+?>\\s(.+)?<",
+                    remove = TRUE)
+ 
+
+rbind(business_subcat, professionals_subcat) %>% 
+    mutate(category = str_match(url_of_subcat ,
+                                pattern="\\/([A-Z].+)\\/") %>% .[,2] %>% str_replace_all("-"," ")) %>% 
+    select(subcategory, category, url_of_subcat ) %>% arrange(subcategory)  %>% 
+    left_join(catagory_list, by="category")                                            -> category_cmplt_list
+    
+
+```
+# Get Page Components
+```{r}
+# prepare the model with Law Firms
+
+law_firms_page  = category_cmplt_list %>% filter(subcategory=="Law Firms") %>% .$url_of_subcat %>% read_html()
+
+name    = law_firms_page %>% html_elements(".col-md-8 span") %>% html_text()
+web_url = law_firms_page %>% html_elements(".btn-sm") %>% str_match("href=\"(.+?)\"")
+address = law_firms_page %>% html_elements(".col-md-8 i") %>% html_text()
+email   = law_firms_page %>% html_elements("address") %>% html_text() %>% 
+    str_match("Email:\\s(.+\\w)") %>% .[,2]
+
+mobile  = law_firms_page %>% html_elements(".other_info") %>% html_text() %>% 
+    str_match("Mobile:\\s(.+)\\sPhone") %>% .[,2]
+
+phone   = law_firms_page %>% html_elements(".other_info") %>% html_text() %>% 
+    str_match("Phone:\\s(.+)Fax") %>% .[,2]
+fax     = law_firms_page %>% html_elements(".other_info") %>% html_text() %>% 
+    str_match("Phone:\\s(.+)Fax") %>% .[,2]
+    
+```
+
+# Make proper loop for all the datapoint
+```{r}
+pages = category_cmplt_list
+
+dt= data.frame()
+for ( page_index in 971:nrow(pages)) {
+    
+       page = pages[page_index,] %>% .$url_of_subcat %>% read_html()
+    
+       name    = page %>% html_elements(".col-md-8 span") %>% html_text()
+       web_url = page %>% html_elements(".btn-sm") %>% str_match("href=\"(.+?)\"") %>% .[,2]
+       address = page %>% html_elements(".col-md-8 i") %>% html_text()
+       email   = page %>% html_elements("address") %>% html_text() %>% 
+             str_match("Email:\\s(.+\\w)") %>% .[,2]
+
+       mobile  = page %>% html_elements(".other_info") %>% html_text() %>% 
+             str_match("Mobile:\\s(.+)\\sPhone") %>% .[,2]
+
+       phone   = page %>% html_elements(".other_info") %>% html_text() %>% 
+             str_match("Phone:\\s(.+)Fax") %>% .[,2]
+       fax     = page %>% html_elements(".other_info") %>% html_text() %>% 
+                 str_match("Phone:\\s(.+)Fax") %>% .[,2] 
+       
+       subcategory = pages[page_index,] %>% .$subcategory %>% rep(times=length(phone))
+       category    = pages[page_index,] %>% .$category    %>% rep(times=length(phone))
+    dt = rbind(dt, 
+              data.frame(name, address, email, mobile, phone, fax, subcategory, category, web_url ))
+cat(str_glue("{page_index} of {nrow(pages)}\n{pages[page_index,] %>% .$subcategory}"))
+    
+}
+
+
+
+```
+
+
