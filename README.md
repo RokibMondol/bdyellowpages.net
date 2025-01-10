@@ -14,7 +14,7 @@ This project contains a web scraper developed in **September 2020** to extract c
 
 ## Files in the Repository  
 - **Scraper Script**:  
-  - `bdyellowpages_scraper.Rmd`: Contains the R Markdown file for running the scraper.  
+  - `Basic Components of bdyellowpages.net websites scrapping.Rmd`: Contains the R Markdown file for running the scraper.  
 - **Scraped Data**:  
   - `bdyellowpages.net.csv`: CSV file containing the extracted data.  
   - `bdyellowpages.net.xlsx`: Excel file with the same data.  
@@ -31,5 +31,3 @@ As this scraper is outdated, it serves primarily as an example or reference for 
 ## License  
 Feel free to use or modify this project for non-commercial purposes.  
 
----  
-If you have any questions or need assistance in updating the scraper, feel free to reach out!  
