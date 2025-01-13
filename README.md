@@ -28,6 +28,3 @@ To run the scraper (for archival purposes):
 ## Note  
 As this scraper is outdated, it serves primarily as an example or reference for extracting similar data. For current scraping, updates to the script are essential to align with the latest website structure.  
 
-## License  
-Feel free to use or modify this project for non-commercial purposes.  
-
